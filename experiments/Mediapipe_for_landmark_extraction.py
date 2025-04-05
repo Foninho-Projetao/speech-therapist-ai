@@ -28,95 +28,83 @@ cheek_2_indices = [
   169, 136, 135, 172, 138, 58, 215, 213, 177, 147
 ]
 
+lip_indices = list(set([idx for pair in mp.solutions.face_mesh.FACEMESH_LIPS for idx in pair]))
+
+# --------------------------------------------------------------------------------------------------------
+
 def draw_landmarks_on_image(rgb_image, detection_result):
-	face_landmarks_list = detection_result.face_landmarks
-	annotated_image = np.copy(rgb_image)
+    face_landmarks_list = detection_result.face_landmarks
+    annotated_image = np.copy(rgb_image)
 
-	# Loop through the detected faces to visualize.
-	for idx in range(len(face_landmarks_list)):
-		face_landmarks = face_landmarks_list[idx]
+    # Loop through the detected faces to visualize.
+    for idx in range(len(face_landmarks_list)):
+        face_landmarks = face_landmarks_list[idx]
 
-		# Draw the face landmarks.
-		face_landmarks_proto = landmark_pb2.NormalizedLandmarkList()
-		face_landmarks_proto.landmark.extend([
-		landmark_pb2.NormalizedLandmark(x=landmark.x, y=landmark.y, z=landmark.z) for landmark in face_landmarks
-		])
+        # Draw the face landmarks.
+        face_landmarks_proto = landmark_pb2.NormalizedLandmarkList()
+        face_landmarks_proto.landmark.extend([
+        landmark_pb2.NormalizedLandmark(x=landmark.x, y=landmark.y, z=landmark.z) for landmark in face_landmarks
+        ])
 
-		solutions.drawing_utils.draw_landmarks(
-			image=annotated_image,
-			landmark_list=face_landmarks_proto,
-			connections=mp.solutions.face_mesh.FACEMESH_TESSELATION,
-			landmark_drawing_spec=None,
-			connection_drawing_spec=mp.solutions.drawing_styles
-			.get_default_face_mesh_tesselation_style())
-		solutions.drawing_utils.draw_landmarks(
-			image=annotated_image,
-			landmark_list=face_landmarks_proto,
-			connections=mp.solutions.face_mesh.FACEMESH_CONTOURS,
-			landmark_drawing_spec=None,
-			connection_drawing_spec=mp.solutions.drawing_styles
-			.get_default_face_mesh_contours_style())
-		solutions.drawing_utils.draw_landmarks(
-			image=annotated_image,
-			landmark_list=face_landmarks_proto,
-			connections=mp.solutions.face_mesh.FACEMESH_IRISES,
-			landmark_drawing_spec=None,
-			connection_drawing_spec=mp.solutions.drawing_styles
-			.get_default_face_mesh_iris_connections_style())
-		solutions.drawing_utils.draw_landmarks(
-			image=annotated_image,
-			landmark_list=face_landmarks_proto,
-			connections=mp.solutions.face_mesh.FACEMESH_LIPS,
-			landmark_drawing_spec=None,
-			connection_drawing_spec=solutions.drawing_utils.DrawingSpec(
-				color=(255, 0, 0),  # Red
-				thickness=2,
-				circle_radius=1
-			))
-		
-		image_height, image_width, _ = annotated_image.shape
-		for idx in cheek_1_indices:
-			if idx < len(face_landmarks):
-				landmark = face_landmarks[idx]
-				x = int(landmark.x * image_width)
-				y = int(landmark.y * image_height)
-				cv2.circle(annotated_image, (x, y), 3, (0, 255, 0), -1)  # green dots
-		
-		image_height, image_width, _ = annotated_image.shape
-		for idx in cheek_2_indices:
-			if idx < len(face_landmarks):
-				landmark = face_landmarks[idx]
-				x = int(landmark.x * image_width)
-				y = int(landmark.y * image_height)
-				cv2.circle(annotated_image, (x, y), 3, (0, 0, 255), -1)  # green dots
+        solutions.drawing_utils.draw_landmarks(
+            image=annotated_image,
+            landmark_list=face_landmarks_proto,
+            connections=mp.solutions.face_mesh.FACEMESH_TESSELATION,
+            landmark_drawing_spec=None,
+            connection_drawing_spec=mp.solutions.drawing_styles
+            .get_default_face_mesh_tesselation_style())
+        solutions.drawing_utils.draw_landmarks(
+            image=annotated_image,
+            landmark_list=face_landmarks_proto,
+            connections=mp.solutions.face_mesh.FACEMESH_CONTOURS,
+            landmark_drawing_spec=None,
+            connection_drawing_spec=mp.solutions.drawing_styles
+            .get_default_face_mesh_contours_style())
+        solutions.drawing_utils.draw_landmarks(
+            image=annotated_image,
+            landmark_list=face_landmarks_proto,
+            connections=mp.solutions.face_mesh.FACEMESH_IRISES,
+            landmark_drawing_spec=None,
+            connection_drawing_spec=mp.solutions.drawing_styles
+            .get_default_face_mesh_iris_connections_style())
+        solutions.drawing_utils.draw_landmarks(
+            image=annotated_image,
+            landmark_list=face_landmarks_proto,
+            connections=mp.solutions.face_mesh.FACEMESH_LIPS,
+            landmark_drawing_spec=None,
+            connection_drawing_spec=solutions.drawing_utils.DrawingSpec(
+                color=(255, 0, 0),  # Red
+                thickness=2,
+                circle_radius=1
+            ))
+        
+        image_height, image_width, _ = annotated_image.shape
+        for idx in cheek_1_indices:
+            if idx < len(face_landmarks):
+                landmark = face_landmarks[idx]
+                x = int(landmark.x * image_width)
+                y = int(landmark.y * image_height)
+                cv2.circle(annotated_image, (x, y), 3, (0, 255, 0), -1)  # green dots
+        
+        image_height, image_width, _ = annotated_image.shape
+        for idx in cheek_2_indices:
+            if idx < len(face_landmarks):
+                landmark = face_landmarks[idx]
+                x = int(landmark.x * image_width)
+                y = int(landmark.y * image_height)
+                cv2.circle(annotated_image, (x, y), 3, (0, 0, 255), -1)  # red dots
+        
+        image_height, image_width, _ = annotated_image.shape
+        for idx in lip_indices:
+            if idx < len(face_landmarks):
+                landmark = face_landmarks[idx]
+                x = int(landmark.x * image_width)
+                y = int(landmark.y * image_height)
+                cv2.circle(annotated_image, (x, y), 3, (255, 0, 0), -1)  # green dots
 
-	return annotated_image
+    return annotated_image
 
-
-def average_landmark_distance(landmarks, indices):
-    """
-    Calculates the average pairwise Euclidean distance between given landmark indices.
-
-    Args:
-        landmarks: List of mediapipe NormalizedLandmark objects (with x, y, z attributes).
-        indices: List of indices representing the subset of landmarks.
-
-    Returns:
-        float: Average Euclidean distance between the specified points.
-    """
-    points = [landmarks[i] for i in indices if i < len(landmarks)]
-
-    if len(points) < 2:
-        return 0.0  # Can't compute distance with fewer than 2 points
-
-    # Compute all pairwise distances
-    distances = []
-    for p1, p2 in itertools.combinations(points, 2):
-        d = np.linalg.norm([p1.x - p2.x, p1.y - p2.y, p1.z - p2.z])
-        distances.append(d)
-
-    return sum(distances) / len(distances)
-
+# --------------------------------------------------------------------------------------------------------
 
 # Cheek inflation detection parameters
 THRESHOLD_FACTOR = 1.05  # 20% increase from baseline
@@ -177,8 +165,76 @@ def detect_cheek_inflation(face_landmarks, image_shape, frame_count):
     
     return left_inflated, right_inflated
 
+# Lip landmarks (MediaPipe indices)
+MOUTH_LEFT = 61
+MOUTH_RIGHT = 291
+UPPER_LIP_CENTER = 13
+LOWER_LIP_CENTER = 14
+NOSE_TIP = 4
 
-# STEP 2: Create an FaceLandmarker object.
+# Pouting detection parameters
+POUT_WIDTH_THRESHOLD = 0.85  # 15% reduction in lip width
+POUT_VERTICAL_THRESHOLD = 1.05  # 15% increase in vertical protrusion
+CALIBRATION_FRAMES = 30  # More frames for stable baseline
+
+# Initialize calibration storage
+baseline_width = None
+baseline_vertical = None
+calibration_widths = []
+calibration_verticals = []
+
+def get_lip_metrics(face_landmarks):
+    """Returns normalized lip width and vertical protrusion"""
+    # Get required landmarks
+    nose_tip = face_landmarks[NOSE_TIP]
+    mouth_left = face_landmarks[MOUTH_LEFT]
+    mouth_right = face_landmarks[MOUTH_RIGHT]
+    upper_lip = face_landmarks[UPPER_LIP_CENTER]
+    lower_lip = face_landmarks[LOWER_LIP_CENTER]
+
+    # Calculate inter-eye distance for normalization
+    left_eye = face_landmarks[33]
+    right_eye = face_landmarks[263]
+    inter_eye_dist = np.sqrt((right_eye.x - left_eye.x)**2 + 
+                           (right_eye.y - left_eye.y)**2)
+
+    # Horizontal lip width (distance between mouth corners)
+    lip_width = np.sqrt((mouth_right.x - mouth_left.x)**2 + 
+                       (mouth_right.y - mouth_left.y)**2)
+    norm_width = lip_width / inter_eye_dist
+
+    # Vertical protrusion (distance from nose to lip center)
+    lip_center = ((upper_lip.x + lower_lip.x)/2, 
+                 (upper_lip.y + lower_lip.y)/2)
+    vertical_dist = np.sqrt((lip_center[0] - nose_tip.x)**2 + 
+                           (lip_center[1] - nose_tip.y)**2)
+    norm_vertical = vertical_dist / inter_eye_dist
+
+    return norm_width, norm_vertical
+
+def detect_pouting(face_landmarks, frame_count):
+    global baseline_width, baseline_vertical, calibration_widths, calibration_verticals
+
+    norm_width, norm_vertical = get_lip_metrics(face_landmarks)
+
+    # Calibration phase
+    if frame_count < CALIBRATION_FRAMES:
+        calibration_widths.append(norm_width)
+        calibration_verticals.append(norm_vertical)
+        if frame_count == CALIBRATION_FRAMES - 1:
+            baseline_width = np.mean(calibration_widths)
+            baseline_vertical = np.mean(calibration_verticals)
+        return False
+
+    # Detection logic
+    width_ratio = norm_width / baseline_width
+    vertical_ratio = norm_vertical / baseline_vertical
+
+    # Pouting requires both compressed width and increased protrusion
+    return (width_ratio < POUT_WIDTH_THRESHOLD and 
+            vertical_ratio > POUT_VERTICAL_THRESHOLD)
+
+# --------------------------------------------------------------------------------------------------------
 base_options = python.BaseOptions(model_asset_path='experiments/face_landmarker_v2_with_blendshapes.task')
 options = vision.FaceLandmarkerOptions(base_options=base_options,
                                        output_face_blendshapes=True,
@@ -187,7 +243,7 @@ options = vision.FaceLandmarkerOptions(base_options=base_options,
 detector = vision.FaceLandmarker.create_from_options(options)
 
 # Load the video
-video_path = "experiments/ex3_certo_full.mp4"  # Change this to your video path
+video_path = "experiments/ex4_certo_full.mp4"  # Change this to your video path
 cap = cv2.VideoCapture(video_path)
 
 if not cap.isOpened():
@@ -219,6 +275,8 @@ while cap.isOpened():
                                                               annotated_image.shape, 
                                                               frame_count)
         
+        pouting = detect_pouting(face_landmarks, frame_count)
+
         if left_inflated:
             cv2.putText(
                 annotated_image, 
@@ -233,16 +291,9 @@ while cap.isOpened():
                 cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2
             )
 
-        # cv2.putText(
-        #     annotated_image, f'{dist_cheek_1}', (10, 30),
-        #     fontFace=cv2.FONT_HERSHEY_SIMPLEX,
-        #     fontScale=1, color=(0, 255, 0), thickness=2
-        # )
-
-        # cv2.putText(annotated_image, f'{dist_cheek_2}', (10, 60),
-        #     fontFace=cv2.FONT_HERSHEY_SIMPLEX,
-        #     fontScale=1, color=(0, 0, 255), thickness=2
-        # )
+        if pouting:
+            cv2.putText(annotated_image, "Pouting", (50, 90),
+                        cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
                
     
     frame_count += 1
