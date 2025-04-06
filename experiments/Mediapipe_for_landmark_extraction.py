@@ -319,8 +319,15 @@ def count_true_groups(lst, max_false_gap=5):
 def true_percentage(bool_list):
     if not bool_list:  # Handle empty list case
         return 0.0
-    true_count = sum(bool_list)  # True is treated as 1, False as 0
-    percentage = (true_count / len(bool_list)) * 100
+
+    start_index = bool_list.index(True)
+    end_index = len(bool_list) - 1 - bool_list[::-1].index(True)
+
+    # Slice the list between first and last True
+    trimmed = bool_list[start_index:end_index + 1]
+
+    true_count = sum(trimmed)  # True is treated as 1, False as 0
+    percentage = (true_count / len(trimmed)) * 100
     return percentage
 
 # --------------------------------------------------------------------------------------------------------
