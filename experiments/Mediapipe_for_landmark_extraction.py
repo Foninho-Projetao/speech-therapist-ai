@@ -177,7 +177,7 @@ NOSE_TIP = 4
 
 # Pouting detection parameters
 POUT_WIDTH_THRESHOLD = 0.75  # 25% reduction in lip width
-POUT_VERTICAL_THRESHOLD = 1.05  # 5% increase in vertical protrusion
+POUT_VERTICAL_THRESHOLD = 1.00  # 0% increase in vertical protrusion
 CALIBRATION_FRAMES = 30  # More frames for stable baseline
 
 # Initialize calibration storage

@@ -53,7 +53,7 @@ NOSE_TIP = 4
 
 # Pouting detection parameters
 POUT_WIDTH_THRESHOLD = 0.75  # 25% reduction in lip width
-POUT_VERTICAL_THRESHOLD = 1.05  # 5% increase in vertical protrusion
+POUT_VERTICAL_THRESHOLD = 1.0  # 0% increase in vertical protrusion
 CALIBRATION_FRAMES = 30  # More frames for stable baseline
 
 # Initialize calibration storage
@@ -325,7 +325,7 @@ def get_mediapipe_pouting_classification(video_file):
         exit()
 
     frame_count = 0
-    pouting_reps = 0
+    pouting_frames = []
     while cap.isOpened():
         ret, frame = cap.read()
         if not ret:
@@ -341,13 +341,15 @@ def get_mediapipe_pouting_classification(video_file):
             face_landmarks = detection_result.face_landmarks[0]
             pouting = detect_pouting(face_landmarks, frame_count)
 
-            if pouting:
-                pouting_reps += 1
+            pouting_frames.append(pouting)
                 
         frame_count += 1
 
     # Clean up
     cap.release()
+
+    pouting_reps = count_true_groups(pouting_frames)
+    print(pouting_reps)
 
     if pouting_reps < 5:
         return "Errou"
@@ -415,3 +417,4 @@ def get_mediapipe_vibration_classification(video_file):
 if __name__ == "__main__":
     print(get_mediapipe_cheek_classification("experiments/fono/ex3_fono.mp4"))
     print(get_mediapipe_vibration_classification("experiments/fono/ex4_fono.mp4"))
+    print(get_mediapipe_pouting_classification('experiments/ex4_certo_full.mp4'))
