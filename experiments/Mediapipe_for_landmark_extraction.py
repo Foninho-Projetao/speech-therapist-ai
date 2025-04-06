@@ -9,21 +9,23 @@ from mediapipe.framework.formats import landmark_pb2
 
 
 cheek_1_indices = [
-  322, 426, 425,
-  410, 436, 427, 411,
-  287, 432, 434, 416,
-  273, 422, 430,
-  335, 424, 431,
-  394, 365, 364, 397, 367, 388, 435, 433, 401, 376
+    322, 426, 425, 280, 352, 366,
+    410, 436, 427, 411, 376,
+    287, 432, 434, 416,
+    273, 422, 430,
+    335, 424, 431,
+    391, 423, 266, 330, 347, 346, 345, 447,
+    394, 365, 364, 397, 367, 388, 435, 433, 401
 ]
 
 cheek_2_indices = [
-  92, 206, 205,
-  186, 216, 207, 187,
-  57, 212, 214, 192,
-  43, 202, 210,
-  106, 204, 211,
-  169, 136, 135, 172, 138, 58, 215, 213, 177, 147
+    92, 206, 205, 50, 123, 137,
+    186, 216, 207, 187, 147,
+    57, 212, 214, 192,
+    43, 202, 210,
+    106, 204, 211,
+    165, 203, 36, 101, 118, 117, 116, 227,
+    169, 136, 135, 172, 138, 58, 215, 213, 177
 ]
 
 lip_indices = list(set([idx for pair in mp.solutions.face_mesh.FACEMESH_LIPS for idx in pair]))
@@ -171,7 +173,7 @@ LOWER_LIP_CENTER = 14
 NOSE_TIP = 4
 
 # Pouting detection parameters
-POUT_WIDTH_THRESHOLD = 0.85  # 15% reduction in lip width
+POUT_WIDTH_THRESHOLD = 0.75  # 25% reduction in lip width
 POUT_VERTICAL_THRESHOLD = 1.05  # 5% increase in vertical protrusion
 CALIBRATION_FRAMES = 30  # More frames for stable baseline
 
@@ -240,7 +242,7 @@ options = vision.FaceLandmarkerOptions(base_options=base_options,
 detector = vision.FaceLandmarker.create_from_options(options)
 
 # Load the video
-video_path = "experiments/ex3_certo_full.mp4"  # Change this to your video path
+video_path = "experiments/ex4_certo_full.mp4"  # Change this to your video path
 cap = cv2.VideoCapture(video_path)
 
 if not cap.isOpened():
