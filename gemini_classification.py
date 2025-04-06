@@ -66,12 +66,44 @@ Retorne APENAS "Correto", "Parcialmente Correto" ou "Incorreto" e um breve comen
 }
 '''
 
+infalte_cheeks_prompt = '''Veja o video da execução do paciente e avalie se o exercício de inflar as bochechas foi performado corretamente, parcialmente ou incorretamente, de acordo com a descrição do exercício fornecida. 
+
+Descrição: O paciente deve inflar as bochechas, uma de cada vez. 
+- Situações em que o paciente inflou um dos lados ou são consideradas execuções parciais.
+- Situações em que não houve nenhuma inflagem ou movimento são consideradas execuções incorretas. Situações sem movimento tambem devem ser consideradas incorretas.
+- Qualquer movimento adicional que não seja a projeção e lateralização da lingua, como mordidas, caretas etc devem ser considerados incorretor.
+
+Retorne APENAS "Correto", "Parcialmente Correto" ou "Incorreto" e um breve comentário sobre o porquê da sua resposta. A estrutura da resposta deve ser a seguinte:
+{
+    "resposta": "Correto/Parcialmente Correto/Incorreto",
+    "comentario": "Seu comentário aqui"
+}
+'''
+
+vibrate_lips_prompt = '''Veja o video da execução do paciente e avalie se o exercício de vibrar os lábios foi performado corretamente, parcialmente ou incorretamente, de acordo com a descrição do exercício fornecida. 
+
+Descrição: O paciente deve vibrar os lábios. 
+- Situações em que o paciente vibrou os labios de forma pausada são consideradas execuções parciais.
+- Situações em que não houve nenhuma vibração ou movimento são consideradas execuções incorretas. Situações sem movimento tambem devem ser consideradas incorretas.
+- Qualquer movimento adicional que não seja a projeção e lateralização da lingua, como mordidas, caretas etc devem ser considerados incorretor.
+
+Retorne APENAS "Correto", "Parcialmente Correto" ou "Incorreto" e um breve comentário sobre o porquê da sua resposta. A estrutura da resposta deve ser a seguinte:
+{
+    "resposta": "Correto/Parcialmente Correto/Incorreto",
+    "comentario": "Seu comentário aqui"
+}
+'''
+
 def get_gemini_classification(exercise, video_file, max_retries=5, retry_delay=2):
 
     if exercise == "2":
         prompt = produde_and_retract_tongue_prompt
     if exercise == "1":
         prompt = lateralize_tongue_prompt
+    if exercise == "infalte_cheeks":
+        prompt = infalte_cheeks_prompt
+    if exercise == "vibrate_lips":
+        prompt = vibrate_lips_prompt
 
     video_bytes = open(video_file, 'rb').read()
 
