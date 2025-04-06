@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import mediapipe as mp
+from collections import deque
 
 from mediapipe import solutions
 from mediapipe.tasks import python
@@ -96,13 +97,13 @@ def draw_landmarks_on_image(rgb_image, detection_result):
                 y = int(landmark.y * image_height)
                 cv2.circle(annotated_image, (x, y), 3, (0, 0, 255), -1)  # red dots
         
-        # image_height, image_width, _ = annotated_image.shape
-        # for idx in lip_indices:
-        #     if idx < len(face_landmarks):
-        #         landmark = face_landmarks[idx]
-        #         x = int(landmark.x * image_width)
-        #         y = int(landmark.y * image_height)
-        #         cv2.circle(annotated_image, (x, y), 3, (255, 0, 0), -1)  # green dots
+        image_height, image_width, _ = annotated_image.shape
+        for idx in lip_indices:
+            if idx < len(face_landmarks):
+                landmark = face_landmarks[idx]
+                x = int(landmark.x * image_width)
+                y = int(landmark.y * image_height)
+                cv2.circle(annotated_image, (x, y), 3, (255, 0, 0), -1)  # green dots
 
     return annotated_image
 
@@ -237,6 +238,63 @@ def detect_pouting(face_landmarks, frame_count):
 
 # --------------------------------------------------------------------------------------------------------
 
+# Lip Vibration Detection Parameters
+VIBRATION_CALIBRATION_FRAMES = 30      # Frames to establish baseline
+VIBRATION_THRESHOLD_FACTOR = 1.20       # Movement threshold multiplier
+VIBRATION_CONSECUTIVE_FRAMES = 2       # Min frames to confirm detection
+
+# Initialize vibration detection variables
+vibration_baseline = None
+calibration_movements = []
+prev_lip_positions = None
+vibration_buffer = deque(maxlen=5)     # Smooth detection
+
+def detect_lip_vibration(face_landmarks, frame_count):
+    global vibration_baseline, calibration_movements, prev_lip_positions
+    
+    current_lip_positions = []
+    for idx in lip_indices:
+        if idx < len(face_landmarks):
+            lm = face_landmarks[idx]
+            current_lip_positions.append((lm.x, lm.y))
+    
+    if prev_lip_positions is None or len(current_lip_positions) != len(prev_lip_positions):
+        prev_lip_positions = current_lip_positions
+        return False
+    
+    # Calculate movement metrics
+    left_eye = face_landmarks[33]
+    right_eye = face_landmarks[263]
+    inter_eye_dist = np.sqrt((right_eye.x - left_eye.x)**2 + 
+                           (right_eye.y - left_eye.y)**2)
+    
+    total_movement = 0
+    for (curr, prev) in zip(current_lip_positions, prev_lip_positions):
+        dx = curr[0] - prev[0]
+        dy = curr[1] - prev[1]
+        displacement = np.sqrt(dx**2 + dy**2) / inter_eye_dist
+        total_movement += displacement
+    
+    avg_movement = total_movement / len(current_lip_positions)
+    
+    # Calibration phase
+    if frame_count < VIBRATION_CALIBRATION_FRAMES:
+        calibration_movements.append(avg_movement)
+        if frame_count == VIBRATION_CALIBRATION_FRAMES-1:
+            vibration_baseline = np.mean(calibration_movements)
+        return False
+    
+    # Detection phase
+    threshold = vibration_baseline * VIBRATION_THRESHOLD_FACTOR
+    vibration_detected = avg_movement > threshold
+    
+    # Update previous positions
+    prev_lip_positions = current_lip_positions
+    
+    return vibration_detected
+
+# --------------------------------------------------------------------------------------------------------
+
 def count_true_groups(lst, max_false_gap=5):
     group_count = 0
     in_group = False
@@ -268,7 +326,7 @@ options = vision.FaceLandmarkerOptions(base_options=base_options,
 detector = vision.FaceLandmarker.create_from_options(options)
 
 # Load the video
-video_path = "experiments/fono/ex3_fono.mp4"  # Change this to your video path
+video_path = "experiments/fono/ex4_fono.mp4"  # Change this to your video path
 cap = cv2.VideoCapture(video_path)
 
 # output_path = "output_video.mp4"
@@ -286,6 +344,8 @@ frame_count = 0
 
 left_expansions = []
 right_expansions = []
+
+vibration_frames = []
 
 while cap.isOpened():
     ret, frame = cap.read()
@@ -330,6 +390,17 @@ while cap.isOpened():
         # if pouting:
         #     cv2.putText(annotated_image, "Pouting", (50, 130),
         #                 cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
+
+        vibration = detect_lip_vibration(face_landmarks, frame_count)
+        vibration_buffer.append(vibration)
+        
+        # Require sustained detection
+        if sum(vibration_buffer) >= VIBRATION_CONSECUTIVE_FRAMES:
+            cv2.putText(annotated_image, "Lip Vibration Detected", (50, 170),
+                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
+            vibration_frames.append(True)
+        else:
+            vibration_frames.append(False)
     
     frame_count += 1
 

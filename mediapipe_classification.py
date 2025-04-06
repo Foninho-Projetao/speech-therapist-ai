@@ -35,8 +35,8 @@ lip_indices = list(set([idx for pair in mp.solutions.face_mesh.FACEMESH_LIPS for
 # --------------------------------------------------------------------------------------------------------
 
 # Cheek inflation detection parameters
-THRESHOLD_FACTOR = 1.05  # 5% increase from baseline
-CALIBRATION_FRAMES = 20  # Frames to establish baseline
+THRESHOLD_FACTOR = 1.10  # 10% increase from baseline
+CALIBRATION_FRAMES = 10  # Frames to establish baseline
 
 # Initialize variables for adaptive threshold
 baseline_left = None
