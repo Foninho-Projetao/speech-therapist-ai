@@ -36,7 +36,7 @@ lip_indices = list(set([idx for pair in mp.solutions.face_mesh.FACEMESH_LIPS for
 # --------------------------------------------------------------------------------------------------------
 
 # Cheek inflation detection parameters
-THRESHOLD_FACTOR = 1.10  # 10% increase from baseline
+THRESHOLD_FACTOR = 1.05  # 10% increase from baseline
 CALIBRATION_FRAMES = 10  # Frames to establish baseline
 
 # Initialize variables for adaptive threshold
@@ -250,6 +250,8 @@ def true_percentage(bool_list):
     if not bool_list:  # Handle empty list case
         return 0.0
 
+    if not True in bool_list:
+        return 0.0
     start_index = bool_list.index(True)
     end_index = len(bool_list) - 1 - bool_list[::-1].index(True)
 
@@ -310,12 +312,12 @@ def get_mediapipe_cheek_classification(video_file):
     # print(right_cheek_reps, left_cheek_reps)
 
     if (left_cheek_reps < 5 or right_cheek_reps < 5):
-        return "Errou"
+        return "Incorreto"
     
     if (left_cheek_reps < 8 or right_cheek_reps < 8):
-        return "Parcial"
+        return "Parcialmente Correto"
     
-    return "Acertou"
+    return "Correto"
 
 
 def get_mediapipe_pouting_classification(video_file):
@@ -362,12 +364,12 @@ def get_mediapipe_pouting_classification(video_file):
     # print(pouting_reps)
 
     if pouting_reps < 5:
-        return "Errou"
+        return "Incorreto"
     
     if pouting_reps < 8:
-        return "Parcial"
+        return "Parcialmente Correto"
     
-    return "Acertou"
+    return "Correto"
 
 def get_mediapipe_vibration_classification(video_file):
     base_options = python.BaseOptions(
@@ -420,10 +422,10 @@ def get_mediapipe_vibration_classification(video_file):
     # print(vibration_percentage)
 
     if vibration_percentage < 50:
-        return "Errou"
+        return "Incorreto"
     if vibration_percentage < 70:
-        return "Parcial"
-    return "Acertou"
+        return "Parcialmente Correto"
+    return "Correto"
 
 if __name__ == "__main__":
     print(get_mediapipe_cheek_classification("experiments/ex_a.mp4"))

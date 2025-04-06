@@ -2,19 +2,39 @@ from fastapi import FastAPI, File, UploadFile, Form
 from fastapi.responses import PlainTextResponse
 from fastapi.middleware.cors import CORSMiddleware
 import os
+import re
+import json
+
+from gemini_classification import get_gemini_classification, get_gemini_classification_2
+from mediapipe_classification import get_mediapipe_cheek_classification, get_mediapipe_vibration_classification
+
+
+def extrair_resposta(texto):
+    # Procura por um bloco de JSON dentro de ```json ... ```
+    padrao_json = re.search(r'```json\s*(\{.*?\})\s*```', texto, re.DOTALL)
+    
+    if padrao_json:
+        try:
+            bloco_json = padrao_json.group(1)
+            dados = json.loads(bloco_json)
+            return dados.get("resposta")
+        except json.JSONDecodeError:
+            print("Erro ao decodificar JSON.")
+            return None
+    else:
+        print("Bloco JSON não encontrado.")
+        return None
+
 
 app = FastAPI()
 
-# (opcional) Habilita CORS se você estiver testando com frontend local
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # ou especifique os domínios permitidos
+    allow_origins=["*"], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
 
 #VERSÃO DO CODIGO PARA TRABALHAR EM UM SÓ PC
 
@@ -26,8 +46,22 @@ async def upload_video(
     try:
         print(f"Vídeo recebido: {video}")
         print(f"Nome do exercício: {nome_exercicio}")
-        
-        return "Correto"
+
+        gemini = ["1", "2"]
+
+        if nome_exercicio in gemini:
+            response = get_gemini_classification(nome_exercicio, video)
+            response = extrair_resposta(response)
+        elif nome_exercicio == "3":
+            response = get_mediapipe_cheek_classification(video)
+        elif nome_exercicio == "4":
+            response = get_mediapipe_vibration_classification(video)
+        else:
+            print ("Exercicio nao reconhecido")
+            response = "Parcialmente Correto"
+            
+        print(f"Resposta: {response}")
+        return response
 
     except Exception as e:
         print(f"Erro ao salvar o vídeo: {e}")

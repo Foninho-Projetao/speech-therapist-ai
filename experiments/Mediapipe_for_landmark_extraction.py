@@ -240,7 +240,7 @@ def detect_pouting(face_landmarks, frame_count):
 
 # Lip Vibration Detection Parameters
 VIBRATION_CALIBRATION_FRAMES = 30      # Frames to establish baseline
-VIBRATION_THRESHOLD_FACTOR = 1.20       # Movement threshold multiplier
+VIBRATION_THRESHOLD_FACTOR = 1.05       # Movement threshold multiplier
 VIBRATION_CONSECUTIVE_FRAMES = 2       # Min frames to confirm detection
 
 # Initialize vibration detection variables
@@ -343,7 +343,7 @@ options = vision.FaceLandmarkerOptions(base_options=base_options,
 detector = vision.FaceLandmarker.create_from_options(options)
 
 # Load the video
-video_path = "experiments/ex_a.mp4"  # Change this to your video path
+video_path = "./experiments/1.mp4"  # Change this to your video path
 cap = cv2.VideoCapture(video_path)
 
 # output_path = "output_video.mp4"
