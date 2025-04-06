@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import mediapipe as mp
+from collections import deque
 
 from mediapipe import solutions
 from mediapipe.tasks import python
@@ -60,6 +61,17 @@ baseline_width = None
 baseline_vertical = None
 calibration_widths = []
 calibration_verticals = []
+
+# Lip Vibration Detection Parameters
+VIBRATION_CALIBRATION_FRAMES = 30      # Frames to establish baseline
+VIBRATION_THRESHOLD_FACTOR = 1.20       # Movement threshold multiplier
+VIBRATION_CONSECUTIVE_FRAMES = 2       # Min frames to confirm detection
+
+# Initialize vibration detection variables
+vibration_baseline = None
+calibration_movements = []
+prev_lip_positions = None
+vibration_buffer = deque(maxlen=5)     # Smooth detection
 
 # --------------------------------------------------------------------------------------------------------
 
@@ -164,6 +176,50 @@ def detect_pouting(face_landmarks, frame_count):
     # Pouting requires both compressed width and increased protrusion
     return (width_ratio < POUT_WIDTH_THRESHOLD and vertical_ratio > POUT_VERTICAL_THRESHOLD)
 
+def detect_lip_vibration(face_landmarks, frame_count):
+    global vibration_baseline, calibration_movements, prev_lip_positions
+    
+    current_lip_positions = []
+    for idx in lip_indices:
+        if idx < len(face_landmarks):
+            lm = face_landmarks[idx]
+            current_lip_positions.append((lm.x, lm.y))
+    
+    if prev_lip_positions is None or len(current_lip_positions) != len(prev_lip_positions):
+        prev_lip_positions = current_lip_positions
+        return False
+    
+    # Calculate movement metrics
+    left_eye = face_landmarks[33]
+    right_eye = face_landmarks[263]
+    inter_eye_dist = np.sqrt((right_eye.x - left_eye.x)**2 + 
+                           (right_eye.y - left_eye.y)**2)
+    
+    total_movement = 0
+    for (curr, prev) in zip(current_lip_positions, prev_lip_positions):
+        dx = curr[0] - prev[0]
+        dy = curr[1] - prev[1]
+        displacement = np.sqrt(dx**2 + dy**2) / inter_eye_dist
+        total_movement += displacement
+    
+    avg_movement = total_movement / len(current_lip_positions)
+    
+    # Calibration phase
+    if frame_count < VIBRATION_CALIBRATION_FRAMES:
+        calibration_movements.append(avg_movement)
+        if frame_count == VIBRATION_CALIBRATION_FRAMES-1:
+            vibration_baseline = np.mean(calibration_movements)
+        return False
+    
+    # Detection phase
+    threshold = vibration_baseline * VIBRATION_THRESHOLD_FACTOR
+    vibration_detected = avg_movement > threshold
+    
+    # Update previous positions
+    prev_lip_positions = current_lip_positions
+    
+    return vibration_detected
+
 # --------------------------------------------------------------------------------------------------------
 
 def count_true_groups(lst, max_false_gap=5):
@@ -186,6 +242,13 @@ def count_true_groups(lst, max_false_gap=5):
                     false_count = 0
 
     return group_count
+
+def true_percentage(bool_list):
+    if not bool_list:  # Handle empty list case
+        return 0.0
+    true_count = sum(bool_list)  # True is treated as 1, False as 0
+    percentage = (true_count / len(bool_list)) * 100
+    return percentage
 
 # --------------------------------------------------------------------------------------------------------
 
@@ -294,5 +357,61 @@ def get_mediapipe_pouting_classification(video_file):
     
     return "Acertou"
 
+def get_mediapipe_vibration_classification(video_file):
+    base_options = python.BaseOptions(
+        model_asset_path='experiments/face_landmarker_v2_with_blendshapes.task'
+    )
+    options = vision.FaceLandmarkerOptions(
+        base_options=base_options, output_face_blendshapes=True, 
+        output_facial_transformation_matrixes=True, num_faces=1
+    )
+    detector = vision.FaceLandmarker.create_from_options(options)
+
+    # Load the video
+    cap = cv2.VideoCapture(video_file)
+    if not cap.isOpened():
+        print("Error: Could not open video.")
+        exit()
+
+    frame_count = 0
+    vibration_frames = []
+    while cap.isOpened():
+        ret, frame = cap.read()
+        if not ret:
+            break
+
+        # Convert the BGR image to RGB
+        cv2_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+        image = mp.Image(image_format=mp.ImageFormat.SRGB, data=cv2_frame)
+        detection_result = detector.detect(image)    
+
+        if detection_result.face_landmarks:
+            face_landmarks = detection_result.face_landmarks[0]
+
+            vibration = detect_lip_vibration(face_landmarks, frame_count)
+            vibration_buffer.append(vibration)
+            
+            # Require sustained detection
+            if sum(vibration_buffer) >= VIBRATION_CONSECUTIVE_FRAMES:
+                vibration_frames.append(True)
+            else:
+                vibration_frames.append(False)
+                
+        frame_count += 1
+
+    # Clean up
+    cap.release()
+
+    vibration_percentage = true_percentage(vibration_frames)
+    print(vibration_percentage)
+
+    if vibration_percentage < 50:
+        return "Errou"
+    if vibration_percentage < 70:
+        return "Parcial"
+    return "Acertou"
+
 if __name__ == "__main__":
     print(get_mediapipe_cheek_classification("experiments/fono/ex3_fono.mp4"))
+    print(get_mediapipe_vibration_classification("experiments/fono/ex4_fono.mp4"))

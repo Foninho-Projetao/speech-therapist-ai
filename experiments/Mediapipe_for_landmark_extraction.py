@@ -176,7 +176,7 @@ LOWER_LIP_CENTER = 14
 NOSE_TIP = 4
 
 # Pouting detection parameters
-POUT_WIDTH_THRESHOLD = 1.05  # 25% reduction in lip width
+POUT_WIDTH_THRESHOLD = 0.75  # 25% reduction in lip width
 POUT_VERTICAL_THRESHOLD = 1.05  # 5% increase in vertical protrusion
 CALIBRATION_FRAMES = 30  # More frames for stable baseline
 
@@ -316,6 +316,13 @@ def count_true_groups(lst, max_false_gap=5):
 
     return group_count
 
+def true_percentage(bool_list):
+    if not bool_list:  # Handle empty list case
+        return 0.0
+    true_count = sum(bool_list)  # True is treated as 1, False as 0
+    percentage = (true_count / len(bool_list)) * 100
+    return percentage
+
 # --------------------------------------------------------------------------------------------------------
 
 base_options = python.BaseOptions(model_asset_path='experiments/face_landmarker_v2_with_blendshapes.task')
@@ -387,9 +394,9 @@ while cap.isOpened():
                 cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2
             )
 
-        # if pouting:
-        #     cv2.putText(annotated_image, "Pouting", (50, 130),
-        #                 cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
+        if pouting:
+            cv2.putText(annotated_image, "Pouting", (50, 130),
+                        cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
 
         vibration = detect_lip_vibration(face_landmarks, frame_count)
         vibration_buffer.append(vibration)
@@ -421,6 +428,8 @@ cv2.destroyAllWindows()
 
 print(right_expansions)
 print(left_expansions)
+print(vibration_frames)
 
 print(count_true_groups(right_expansions))
 print(count_true_groups(left_expansions))
+print(true_percentage(vibration_frames))
