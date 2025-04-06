@@ -244,6 +244,9 @@ def count_true_groups(lst, max_false_gap=5):
     return group_count
 
 def true_percentage(bool_list):
+    if True not in bool_list:
+        return 0.0
+    
     if not bool_list:  # Handle empty list case
         return 0.0
 
@@ -423,6 +426,6 @@ def get_mediapipe_vibration_classification(video_file):
     return "Acertou"
 
 if __name__ == "__main__":
-    print(get_mediapipe_cheek_classification("experiments/fono/ex3_fono.mp4"))
-    print(get_mediapipe_vibration_classification("experiments/fono/ex4_fono.mp4"))
-    print(get_mediapipe_pouting_classification('experiments/ex4_certo_full.mp4'))
+    print(get_mediapipe_cheek_classification("experiments/ex_a.mp4"))
+    # print(get_mediapipe_vibration_classification("experiments/fono/ex4_fono.mp4"))
+    # print(get_mediapipe_pouting_classification('experiments/ex4_certo_full.mp4'))

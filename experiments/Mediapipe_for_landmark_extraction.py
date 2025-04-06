@@ -317,6 +317,9 @@ def count_true_groups(lst, max_false_gap=5):
     return group_count
 
 def true_percentage(bool_list):
+    if True not in bool_list:
+        return 0.0
+    
     if not bool_list:  # Handle empty list case
         return 0.0
 
@@ -340,7 +343,7 @@ options = vision.FaceLandmarkerOptions(base_options=base_options,
 detector = vision.FaceLandmarker.create_from_options(options)
 
 # Load the video
-video_path = "experiments/fono/ex4_fono.mp4"  # Change this to your video path
+video_path = "experiments/ex_a.mp4"  # Change this to your video path
 cap = cv2.VideoCapture(video_path)
 
 # output_path = "output_video.mp4"
