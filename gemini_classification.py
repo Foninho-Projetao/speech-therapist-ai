@@ -75,11 +75,12 @@ def get_gemini_classification(exercise, video_file, max_retries=5, retry_delay=2
 
     video_bytes = open(video_file, 'rb').read()
 
+    curr_model = 'models/gemini-1.5-pro'
 
     for attempt in range(max_retries):
         try:
             response = client.models.generate_content(
-                model='models/gemini-1.5-pro',
+                model=curr_model,
                 contents=types.Content(
                     parts=[
                         types.Part(text=prompt),
@@ -91,7 +92,7 @@ def get_gemini_classification(exercise, video_file, max_retries=5, retry_delay=2
             )
             break
         except errors.APIError as e:
-            if e.code == 503:
+            if e.code == 503 or e.code == 504:
                 if attempt < max_retries - 1:
                     print(f"Attempt {attempt + 1} failed with 503 error. Retrying in {retry_delay} seconds...")
                     time.sleep(retry_delay)
@@ -99,6 +100,10 @@ def get_gemini_classification(exercise, video_file, max_retries=5, retry_delay=2
                 else:
                     print("Max retries reached. Server is still unavailable.")
                     raise
+            elif e.code == 429:
+                print(f'{curr_model} was Exhausted...')
+                curr_model = 'models/gemini-2.5-pro-exp-03-25'
+                print(f'Swithing to {curr_model}...')
             else:
                 print(f"An unexpected error occurred: {str(e)}")
                 raise
@@ -106,7 +111,7 @@ def get_gemini_classification(exercise, video_file, max_retries=5, retry_delay=2
             print(f"An unexpected error occurred: {str(e)}")
             raise
 
-    print(response.text)
+    return response.text
 
 def get_gemini_classification_2(exercise, video_file, max_retries=5, retry_delay=2):
 
@@ -120,10 +125,12 @@ def get_gemini_classification_2(exercise, video_file, max_retries=5, retry_delay
     fono_video_bytes = open(fono_video_file_name, 'rb').read()
     video_bytes = open(video_file, 'rb').read()
 
+    curr_model = 'models/gemini-1.5-pro'
+
     for attempt in range(max_retries):
         try:
             response = client.models.generate_content(
-                model='models/gemini-1.5-pro',
+                model=curr_model,
                 contents=types.Content(
                     parts=[
                         types.Part(
@@ -138,7 +145,7 @@ def get_gemini_classification_2(exercise, video_file, max_retries=5, retry_delay
             )
             break
         except errors.APIError as e:
-            if e.code == 503:
+            if e.code == 503 or e.code == 504:
                 if attempt < max_retries - 1:
                     print(f"Attempt {attempt + 1} failed with 503 error. Retrying in {retry_delay} seconds...")
                     time.sleep(retry_delay)
@@ -146,6 +153,10 @@ def get_gemini_classification_2(exercise, video_file, max_retries=5, retry_delay
                 else:
                     print("Max retries reached. Server is still unavailable.")
                     raise
+            elif e.code == 429:
+                print(f'{curr_model} was Exhausted...')
+                curr_model = 'models/gemini-2.5-pro-exp-03-25'
+                print(f'Swithing to {curr_model}...')
             else:
                 print(f"An unexpected error occurred: {str(e)}")
                 raise
@@ -157,4 +168,4 @@ def get_gemini_classification_2(exercise, video_file, max_retries=5, retry_delay
 
 
 if __name__ == '__main__':
-    print(get_gemini_classification_2("produde_and_retract_tongue", "experiments/ex1_errado.mp4"))
+    print(get_gemini_classification("produde_and_retract_tongue", "experiments/ex1_errado.mp4"))

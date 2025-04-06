@@ -356,7 +356,7 @@ def get_mediapipe_pouting_classification(video_file):
     cap.release()
 
     pouting_reps = count_true_groups(pouting_frames)
-    print(pouting_reps)
+    # print(pouting_reps)
 
     if pouting_reps < 5:
         return "Incorreto"
@@ -413,8 +413,8 @@ def get_mediapipe_vibration_classification(video_file):
     cap.release()
 
     vibration_percentage = true_percentage(vibration_frames)
-    print(vibration_frames)
-    print(vibration_percentage)
+    # print(vibration_frames)
+    # print(vibration_percentage)
 
     if vibration_percentage < 50:
         return "Incorreto"
@@ -423,6 +423,6 @@ def get_mediapipe_vibration_classification(video_file):
     return "Correto"
 
 if __name__ == "__main__":
-    # print(get_mediapipe_cheek_classification("experiments/fono/ex3_fono.mp4"))
+    print(get_mediapipe_cheek_classification("experiments/fono/ex3_fono.mp4"))
     print(get_mediapipe_vibration_classification("experiments/fono/ex4_fono.mp4"))
-    # print(get_mediapipe_pouting_classification('experiments/ex4_certo_full.mp4'))
+    print(get_mediapipe_pouting_classification('experiments/ex4_certo_full.mp4'))
