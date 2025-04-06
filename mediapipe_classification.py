@@ -300,12 +300,12 @@ def get_mediapipe_cheek_classification(video_file):
     # print(right_cheek_reps, left_cheek_reps)
 
     if (left_cheek_reps < 5 or right_cheek_reps < 5):
-        return "Errou"
+        return "Incorreto"
     
     if (left_cheek_reps < 8 or right_cheek_reps < 8):
-        return "Parcial"
+        return "Parcialmente Correto"
     
-    return "Acertou"
+    return "Correto"
 
 
 def get_mediapipe_pouting_classification(video_file):
@@ -352,12 +352,12 @@ def get_mediapipe_pouting_classification(video_file):
     print(pouting_reps)
 
     if pouting_reps < 5:
-        return "Errou"
+        return "Incorreto"
     
     if pouting_reps < 8:
-        return "Parcial"
+        return "Parcialmente Correto"
     
-    return "Acertou"
+    return "Correto"
 
 def get_mediapipe_vibration_classification(video_file):
     base_options = python.BaseOptions(
@@ -409,10 +409,10 @@ def get_mediapipe_vibration_classification(video_file):
     print(vibration_percentage)
 
     if vibration_percentage < 50:
-        return "Errou"
+        return "Incorreto"
     if vibration_percentage < 70:
-        return "Parcial"
-    return "Acertou"
+        return "Parcialmente Correto"
+    return "Correto"
 
 if __name__ == "__main__":
     print(get_mediapipe_cheek_classification("experiments/fono/ex3_fono.mp4"))
