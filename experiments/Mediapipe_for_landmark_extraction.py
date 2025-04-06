@@ -1,9 +1,7 @@
-import itertools
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
-
 import mediapipe as mp
+
 from mediapipe import solutions
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
@@ -107,15 +105,32 @@ def draw_landmarks_on_image(rgb_image, detection_result):
 # --------------------------------------------------------------------------------------------------------
 
 # Cheek inflation detection parameters
-THRESHOLD_FACTOR = 1.05  # 20% increase from baseline
-CALIBRATION_FRAMES = 10  # Frames to establish baseline
+THRESHOLD_FACTOR = 1.05  # 5% increase from baseline
+CALIBRATION_FRAMES = 20  # Frames to establish baseline
 
 # Initialize variables for adaptive threshold
 baseline_left = None
 baseline_right = None
 calibration_values = []
 
-def detect_cheek_inflation(face_landmarks, image_shape, frame_count):
+def get_cheek_metric(face_landmarks, indices, inter_eye_dist):
+    points = [face_landmarks[i] for i in indices if i < len(face_landmarks)]
+    if len(points) < 3:
+        return 0
+    
+    # Calculate centroid
+    centroid_x = sum(lm.x for lm in points) / len(points)
+    centroid_y = sum(lm.y for lm in points) / len(points)
+    
+    # Calculate average distance from centroid
+    distances = [np.sqrt((lm.x - centroid_x)**2 + (lm.y - centroid_y)**2) 
+                for lm in points]
+    avg_distance = sum(distances) / len(distances)
+    
+    # Normalize by inter-eye distance
+    return avg_distance / inter_eye_dist
+
+def detect_cheek_inflation(face_landmarks, frame_count):
     global baseline_left, baseline_right, calibration_values
     
     # Get relevant landmarks
@@ -127,26 +142,9 @@ def detect_cheek_inflation(face_landmarks, image_shape, frame_count):
     inter_eye_dist = np.sqrt((right_eye_outer.x - left_eye_outer.x)**2 + 
                             (right_eye_outer.y - left_eye_outer.y)**2)
     
-    # Calculate cheek spread metrics
-    def get_cheek_metric(indices):
-        points = [face_landmarks[i] for i in indices if i < len(face_landmarks)]
-        if len(points) < 3:
-            return 0
-        
-        # Calculate centroid
-        centroid_x = sum(lm.x for lm in points) / len(points)
-        centroid_y = sum(lm.y for lm in points) / len(points)
-        
-        # Calculate average distance from centroid
-        distances = [np.sqrt((lm.x - centroid_x)**2 + (lm.y - centroid_y)**2) 
-                    for lm in points]
-        avg_distance = sum(distances) / len(distances)
-        
-        # Normalize by inter-eye distance
-        return avg_distance / inter_eye_dist
     
-    left_metric = get_cheek_metric(cheek_1_indices)
-    right_metric = get_cheek_metric(cheek_2_indices)
+    left_metric = get_cheek_metric(face_landmarks, cheek_1_indices, inter_eye_dist)
+    right_metric = get_cheek_metric(face_landmarks, cheek_2_indices, inter_eye_dist)
     
     # Calibration phase
     if frame_count < CALIBRATION_FRAMES:
@@ -174,7 +172,7 @@ NOSE_TIP = 4
 
 # Pouting detection parameters
 POUT_WIDTH_THRESHOLD = 0.85  # 15% reduction in lip width
-POUT_VERTICAL_THRESHOLD = 1.05  # 15% increase in vertical protrusion
+POUT_VERTICAL_THRESHOLD = 1.05  # 5% increase in vertical protrusion
 CALIBRATION_FRAMES = 30  # More frames for stable baseline
 
 # Initialize calibration storage
@@ -231,8 +229,7 @@ def detect_pouting(face_landmarks, frame_count):
     vertical_ratio = norm_vertical / baseline_vertical
 
     # Pouting requires both compressed width and increased protrusion
-    return (width_ratio < POUT_WIDTH_THRESHOLD and 
-            vertical_ratio > POUT_VERTICAL_THRESHOLD)
+    return (width_ratio < POUT_WIDTH_THRESHOLD and vertical_ratio > POUT_VERTICAL_THRESHOLD)
 
 # --------------------------------------------------------------------------------------------------------
 base_options = python.BaseOptions(model_asset_path='experiments/face_landmarker_v2_with_blendshapes.task')
@@ -243,7 +240,7 @@ options = vision.FaceLandmarkerOptions(base_options=base_options,
 detector = vision.FaceLandmarker.create_from_options(options)
 
 # Load the video
-video_path = "experiments/ex4_certo_full.mp4"  # Change this to your video path
+video_path = "experiments/ex3_certo_full.mp4"  # Change this to your video path
 cap = cv2.VideoCapture(video_path)
 
 if not cap.isOpened():
@@ -271,9 +268,7 @@ while cap.isOpened():
     inflation_text = ""
     if detection_result.face_landmarks:
         face_landmarks = detection_result.face_landmarks[0]
-        left_inflated, right_inflated = detect_cheek_inflation(face_landmarks, 
-                                                              annotated_image.shape, 
-                                                              frame_count)
+        left_inflated, right_inflated = detect_cheek_inflation(face_landmarks, frame_count)
         
         pouting = detect_pouting(face_landmarks, frame_count)
 
