@@ -66,7 +66,7 @@ Retorne APENAS "Acertou", "Parcial" ou "Errou" e um breve comentário sobre o po
 }
 '''
 
-def get_gemini_classification(exercise, video_file):
+def get_gemini_classification(exercise, video_file, max_retries=5, retry_delay=2):
 
     if exercise == "produde_and_retract_tongue":
         prompt = produde_and_retract_tongue_prompt
@@ -75,34 +75,51 @@ def get_gemini_classification(exercise, video_file):
 
     video_bytes = open(video_file, 'rb').read()
 
-    response = client.models.generate_content(
-        model='models/gemini-1.5-pro',
-        contents=types.Content(
-            parts=[
-                types.Part(text=prompt),
-                types.Part(
-                    inline_data=types.Blob(data=video_bytes, mime_type='video/mp4')
+
+    for attempt in range(max_retries):
+        try:
+            response = client.models.generate_content(
+                model='models/gemini-1.5-pro',
+                contents=types.Content(
+                    parts=[
+                        types.Part(text=prompt),
+                        types.Part(
+                            inline_data=types.Blob(data=video_bytes, mime_type='video/mp4')
+                        )
+                    ]
                 )
-            ]
-        )
-    )
+            )
+            break
+        except errors.APIError as e:
+            if e.code == 503:
+                if attempt < max_retries - 1:
+                    print(f"Attempt {attempt + 1} failed with 503 error. Retrying in {retry_delay} seconds...")
+                    time.sleep(retry_delay)
+                    retry_delay *= 2
+                else:
+                    print("Max retries reached. Server is still unavailable.")
+                    raise
+            else:
+                print(f"An unexpected error occurred: {str(e)}")
+                raise
+        except Exception as e:
+            print(f"An unexpected error occurred: {str(e)}")
+            raise
 
-    return response.text
+    print(response.text)
 
-def get_gemini_classification_2(exercise, video_file):
+def get_gemini_classification_2(exercise, video_file, max_retries=5, retry_delay=2):
 
     if exercise == "produde_and_retract_tongue":
         prompt = produde_and_retract_tongue_prompt_2
-        fono_video_file_name = "fono/ex2_fono.mp4"
+        fono_video_file_name = "experiments/fono/ex2_fono.mp4"
     if exercise == "lateralize_tongue":
         prompt = lateralize_tongue_prompt_2
-        fono_video_file_name = "fono/ex1_fono.mp4"
+        fono_video_file_name = "experiments/fono/ex1_fono.mp4"
 
     fono_video_bytes = open(fono_video_file_name, 'rb').read()
     video_bytes = open(video_file, 'rb').read()
 
-    max_retries = 5
-    retry_delay = 2
     for attempt in range(max_retries):
         try:
             response = client.models.generate_content(
@@ -136,4 +153,8 @@ def get_gemini_classification_2(exercise, video_file):
             print(f"An unexpected error occurred: {str(e)}")
             raise
 
-    print(response.text)
+    return response.text
+
+
+if __name__ == '__main__':
+    print(get_gemini_classification_2("produde_and_retract_tongue", "experiments/ex1_errado.mp4"))
