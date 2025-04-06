@@ -59,7 +59,8 @@ async def upload_video(
         else:
             print ("Exercicio nao reconhecido")
             response = "Parcialmente Correto"
-        
+            
+        print(f"Resposta: {response}")
         return response
 
     except Exception as e:

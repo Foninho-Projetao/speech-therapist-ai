@@ -19,7 +19,7 @@ Descrição: O paciente deve projetar a lingua para fora da boca e depois deve m
 - Situações em que não houve projeção para fora ou que ele não moveu a lingua são consideradas execuções incorretas. Situações sem movimento tambem devem ser consideradas incorretas.
 - Qualquer movimento adicional que não seja a projeção e lateralização da lingua, como mordidas, caretas etc devem ser considerados incorretor.
 
-Retorne APENAS "Acertou", "Parcialmente Correto" ou "Incorreto" e um breve comentário sobre o porquê da sua resposta. A estrutura da resposta deve ser a seguinte:
+Retorne APENAS "Correto", "Parcialmente Correto" ou "Incorreto" e um breve comentário sobre o porquê da sua resposta. A estrutura da resposta deve ser a seguinte:
 {
     "resposta": "Correto/Parcialmente Correto/Incorreto",
     "comentario": "Seu comentário aqui"
@@ -32,7 +32,7 @@ Descrição: O paciente deve abrir a boca, projetar a lingua para fora e depois 
 - Situações em que não houve projeção para fora ou que ele não moveu a lingua são consideradas execuções incorretas. Situações sem movimento tambem devem ser consideradas incorretas.
 - Qualquer movimento adicional que não seja a projeção e lateralização da lingua, como mordidas, caretas etc devem ser considerados incorretor.
 
-Retorne APENAS "Acertou", "Parcialmente Correto" ou "Incorreto" e um breve comentário sobre o porquê da sua resposta. A estrutura da resposta deve ser a seguinte:
+Retorne APENAS "Correto", "Parcialmente Correto" ou "Incorreto" e um breve comentário sobre o porquê da sua resposta. A estrutura da resposta deve ser a seguinte:
 {
     "resposta": "Correto/Parcialmente Correto/Incorreto",
     "comentario": "Seu comentário aqui"
@@ -46,7 +46,7 @@ Descrição: O paciente deve projetar a lingua para fora da boca (obrigatoriamen
 - Situações em que não houve projeção para fora ou que ele não retraiu a lingua ao final são consideradas execuções incorretas.
 - Qualquer movimento adicional que não seja a projeção e retração da lingua, como a lateralização, mordidas, caretas etc devem ser considerados incorretor.
 
-Retorne APENAS "Acertou", "Parcialmente Correto" ou "Incorreto" e um breve comentário sobre o porquê da sua resposta. A estrutura da resposta deve ser a seguinte:
+Retorne APENAS "Correto", "Parcialmente Correto" ou "Incorreto" e um breve comentário sobre o porquê da sua resposta. A estrutura da resposta deve ser a seguinte:
 {
     "resposta": "Correto/Parcialmente Correto/Incorreto",
     "comentario": "Seu comentário aqui"
@@ -59,7 +59,7 @@ Descrição: O paciente deve abrir a boca e projetar a lingua para fora da boca 
 - Situações em que não houve projeção para fora ou que ele não retraiu a lingua ao final são consideradas execuções incorretas.
 - Qualquer movimento adicional que não seja a projeção e retração da lingua, como a lateralização, mordidas, caretas etc devem ser considerados incorretos.
 
-Retorne APENAS "Acertou", "Parcialmente Correto" ou "Incorreto" e um breve comentário sobre o porquê da sua resposta. A estrutura da resposta deve ser a seguinte:
+Retorne APENAS "Correto", "Parcialmente Correto" ou "Incorreto" e um breve comentário sobre o porquê da sua resposta. A estrutura da resposta deve ser a seguinte:
 {
     "resposta": "Correto/Parcialmente Correto/Incorreto",
     "comentario": "Seu comentário aqui"
@@ -68,9 +68,9 @@ Retorne APENAS "Acertou", "Parcialmente Correto" ou "Incorreto" e um breve comen
 
 def get_gemini_classification(exercise, video_file, max_retries=5, retry_delay=2):
 
-    if exercise == "produde_and_retract_tongue":
+    if exercise == "2":
         prompt = produde_and_retract_tongue_prompt
-    if exercise == "lateralize_tongue":
+    if exercise == "1":
         prompt = lateralize_tongue_prompt
 
     video_bytes = open(video_file, 'rb').read()
@@ -115,10 +115,10 @@ def get_gemini_classification(exercise, video_file, max_retries=5, retry_delay=2
 
 def get_gemini_classification_2(exercise, video_file, max_retries=5, retry_delay=2):
 
-    if exercise == "1":
+    if exercise == "2":
         prompt = produde_and_retract_tongue_prompt_2
         fono_video_file_name = "experiments/fono/ex2_fono.mp4"
-    if exercise == "2":
+    if exercise == "1":
         prompt = lateralize_tongue_prompt_2
         fono_video_file_name = "experiments/fono/ex1_fono.mp4"
 

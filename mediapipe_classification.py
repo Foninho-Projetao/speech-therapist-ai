@@ -36,7 +36,7 @@ lip_indices = list(set([idx for pair in mp.solutions.face_mesh.FACEMESH_LIPS for
 # --------------------------------------------------------------------------------------------------------
 
 # Cheek inflation detection parameters
-THRESHOLD_FACTOR = 1.10  # 10% increase from baseline
+THRESHOLD_FACTOR = 1.05  # 10% increase from baseline
 CALIBRATION_FRAMES = 10  # Frames to establish baseline
 
 # Initialize variables for adaptive threshold
@@ -247,6 +247,8 @@ def true_percentage(bool_list):
     if not bool_list:  # Handle empty list case
         return 0.0
 
+    if not True in bool_list:
+        return 0.0
     start_index = bool_list.index(True)
     end_index = len(bool_list) - 1 - bool_list[::-1].index(True)
 
