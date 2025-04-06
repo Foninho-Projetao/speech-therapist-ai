@@ -15,7 +15,8 @@ cheek_1_indices = [
     273, 422, 430,
     335, 424, 431,
     391, 423, 266, 330, 347, 346, 345, 447,
-    394, 365, 364, 397, 367, 388, 435, 433, 401
+    394, 365, 364, 397, 367, 388, 435, 433, 401,
+    269, 270, 409, 321,
 ]
 
 cheek_2_indices = [
@@ -25,7 +26,8 @@ cheek_2_indices = [
     43, 202, 210,
     106, 204, 211,
     165, 203, 36, 101, 118, 117, 116, 227,
-    169, 136, 135, 172, 138, 58, 215, 213, 177
+    169, 136, 135, 172, 138, 58, 215, 213, 177,
+    39, 40, 185, 91,
 ]
 
 lip_indices = list(set([idx for pair in mp.solutions.face_mesh.FACEMESH_LIPS for idx in pair]))
@@ -67,16 +69,16 @@ def draw_landmarks_on_image(rgb_image, detection_result):
             landmark_drawing_spec=None,
             connection_drawing_spec=mp.solutions.drawing_styles
             .get_default_face_mesh_iris_connections_style())
-        solutions.drawing_utils.draw_landmarks(
-            image=annotated_image,
-            landmark_list=face_landmarks_proto,
-            connections=mp.solutions.face_mesh.FACEMESH_LIPS,
-            landmark_drawing_spec=None,
-            connection_drawing_spec=solutions.drawing_utils.DrawingSpec(
-                color=(255, 0, 0),  # Red
-                thickness=2,
-                circle_radius=1
-            ))
+        # solutions.drawing_utils.draw_landmarks(
+        #     image=annotated_image,
+        #     landmark_list=face_landmarks_proto,
+        #     connections=mp.solutions.face_mesh.FACEMESH_LIPS,
+        #     landmark_drawing_spec=None,
+        #     connection_drawing_spec=solutions.drawing_utils.DrawingSpec(
+        #         color=(255, 0, 0),  # Red
+        #         thickness=2,
+        #         circle_radius=1
+        #     ))
         
         image_height, image_width, _ = annotated_image.shape
         for idx in cheek_1_indices:
@@ -94,21 +96,21 @@ def draw_landmarks_on_image(rgb_image, detection_result):
                 y = int(landmark.y * image_height)
                 cv2.circle(annotated_image, (x, y), 3, (0, 0, 255), -1)  # red dots
         
-        image_height, image_width, _ = annotated_image.shape
-        for idx in lip_indices:
-            if idx < len(face_landmarks):
-                landmark = face_landmarks[idx]
-                x = int(landmark.x * image_width)
-                y = int(landmark.y * image_height)
-                cv2.circle(annotated_image, (x, y), 3, (255, 0, 0), -1)  # green dots
+        # image_height, image_width, _ = annotated_image.shape
+        # for idx in lip_indices:
+        #     if idx < len(face_landmarks):
+        #         landmark = face_landmarks[idx]
+        #         x = int(landmark.x * image_width)
+        #         y = int(landmark.y * image_height)
+        #         cv2.circle(annotated_image, (x, y), 3, (255, 0, 0), -1)  # green dots
 
     return annotated_image
 
 # --------------------------------------------------------------------------------------------------------
 
 # Cheek inflation detection parameters
-THRESHOLD_FACTOR = 1.05  # 5% increase from baseline
-CALIBRATION_FRAMES = 20  # Frames to establish baseline
+THRESHOLD_FACTOR = 1.10  # 10% increase from baseline
+CALIBRATION_FRAMES = 10  # Frames to establish baseline
 
 # Initialize variables for adaptive threshold
 baseline_left = None
@@ -173,7 +175,7 @@ LOWER_LIP_CENTER = 14
 NOSE_TIP = 4
 
 # Pouting detection parameters
-POUT_WIDTH_THRESHOLD = 0.75  # 25% reduction in lip width
+POUT_WIDTH_THRESHOLD = 1.05  # 25% reduction in lip width
 POUT_VERTICAL_THRESHOLD = 1.05  # 5% increase in vertical protrusion
 CALIBRATION_FRAMES = 30  # More frames for stable baseline
 
@@ -234,6 +236,30 @@ def detect_pouting(face_landmarks, frame_count):
     return (width_ratio < POUT_WIDTH_THRESHOLD and vertical_ratio > POUT_VERTICAL_THRESHOLD)
 
 # --------------------------------------------------------------------------------------------------------
+
+def count_true_groups(lst, max_false_gap=5):
+    group_count = 0
+    in_group = False
+    false_count = 0
+
+    for val in lst:
+        if val:
+            if not in_group:
+                # Start of a new group
+                group_count += 1
+                in_group = True
+            false_count = 0  # Reset false counter when we see a True
+        else:
+            if in_group:
+                false_count += 1
+                if false_count > max_false_gap:
+                    in_group = False  # End current group if gap too large
+                    false_count = 0
+
+    return group_count
+
+# --------------------------------------------------------------------------------------------------------
+
 base_options = python.BaseOptions(model_asset_path='experiments/face_landmarker_v2_with_blendshapes.task')
 options = vision.FaceLandmarkerOptions(base_options=base_options,
                                        output_face_blendshapes=True,
@@ -242,14 +268,24 @@ options = vision.FaceLandmarkerOptions(base_options=base_options,
 detector = vision.FaceLandmarker.create_from_options(options)
 
 # Load the video
-video_path = "experiments/ex4_certo_full.mp4"  # Change this to your video path
+video_path = "experiments/fono/ex3_fono.mp4"  # Change this to your video path
 cap = cv2.VideoCapture(video_path)
+
+# output_path = "output_video.mp4"
+# fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+# fps = cap.get(cv2.CAP_PROP_FPS)  # Get original video's FPS
+# width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH) * 0.5)  # Match your resize dimensions
+# height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT) * 0.5)
+# out = cv2.VideoWriter(output_path, fourcc, fps, (height, width))
 
 if not cap.isOpened():
     print("Error: Could not open video.")
     exit()
 
 frame_count = 0
+
+left_expansions = []
+right_expansions = []
 
 while cap.isOpened():
     ret, frame = cap.read()
@@ -271,6 +307,9 @@ while cap.isOpened():
     if detection_result.face_landmarks:
         face_landmarks = detection_result.face_landmarks[0]
         left_inflated, right_inflated = detect_cheek_inflation(face_landmarks, frame_count)
+
+        right_expansions.append(right_inflated)
+        left_expansions.append(left_inflated)
         
         pouting = detect_pouting(face_landmarks, frame_count)
 
@@ -284,19 +323,21 @@ while cap.isOpened():
         if right_inflated:
             cv2.putText(
                 annotated_image, 
-                "Right cheek inflated", (50, 50),
+                "Right cheek inflated", (50, 90),
                 cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2
             )
 
-        if pouting:
-            cv2.putText(annotated_image, "Pouting", (50, 90),
-                        cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
-               
+        # if pouting:
+        #     cv2.putText(annotated_image, "Pouting", (50, 130),
+        #                 cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
     
     frame_count += 1
 
     annotated_image = cv2.resize(annotated_image, (w, h))
-    cv2.imshow('', annotated_image)
+    display_image = cv2.rotate(cv2.cvtColor(annotated_image, cv2.COLOR_RGB2BGR), cv2.ROTATE_90_CLOCKWISE)
+    cv2.imshow('Face', display_image)
+
+    # out.write(display_image)
 
     # Press 'q' to quit
     if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -305,3 +346,10 @@ while cap.isOpened():
 # Clean up
 cap.release()
 cv2.destroyAllWindows()
+
+
+print(right_expansions)
+print(left_expansions)
+
+print(count_true_groups(right_expansions))
+print(count_true_groups(left_expansions))

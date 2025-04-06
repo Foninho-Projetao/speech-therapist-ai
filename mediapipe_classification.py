@@ -15,7 +15,8 @@ cheek_1_indices = [
     273, 422, 430,
     335, 424, 431,
     391, 423, 266, 330, 347, 346, 345, 447,
-    394, 365, 364, 397, 367, 388, 435, 433, 401
+    394, 365, 364, 397, 367, 388, 435, 433, 401,
+    269, 270, 409, 321,
 ]
 
 cheek_2_indices = [
@@ -25,7 +26,8 @@ cheek_2_indices = [
     43, 202, 210,
     106, 204, 211,
     165, 203, 36, 101, 118, 117, 116, 227,
-    169, 136, 135, 172, 138, 58, 215, 213, 177
+    169, 136, 135, 172, 138, 58, 215, 213, 177,
+    39, 40, 185, 91,
 ]
 
 lip_indices = list(set([idx for pair in mp.solutions.face_mesh.FACEMESH_LIPS for idx in pair]))
@@ -164,6 +166,29 @@ def detect_pouting(face_landmarks, frame_count):
 
 # --------------------------------------------------------------------------------------------------------
 
+def count_true_groups(lst, max_false_gap=5):
+    group_count = 0
+    in_group = False
+    false_count = 0
+
+    for val in lst:
+        if val:
+            if not in_group:
+                # Start of a new group
+                group_count += 1
+                in_group = True
+            false_count = 0  # Reset false counter when we see a True
+        else:
+            if in_group:
+                false_count += 1
+                if false_count > max_false_gap:
+                    in_group = False  # End current group if gap too large
+                    false_count = 0
+
+    return group_count
+
+# --------------------------------------------------------------------------------------------------------
+
 def get_mediapipe_cheek_classification(video_file):
     base_options = python.BaseOptions(
         model_asset_path='experiments/face_landmarker_v2_with_blendshapes.task'
@@ -181,8 +206,8 @@ def get_mediapipe_cheek_classification(video_file):
         exit()
 
     frame_count = 0
-    left_cheek_reps = 0
-    right_cheek_reps = 0
+    left_expansions = []
+    right_expansions = []
     while cap.isOpened():
         ret, frame = cap.read()
         if not ret:
@@ -199,21 +224,22 @@ def get_mediapipe_cheek_classification(video_file):
             face_landmarks = detection_result.face_landmarks[0]
             left_inflated, right_inflated = detect_cheek_inflation(face_landmarks, frame_count)
 
-            if left_inflated:
-                left_cheek_reps += 1
-
-            if right_inflated:
-                right_cheek_reps += 1
+            right_expansions.append(right_inflated)
+            left_expansions.append(left_inflated)
 
         frame_count += 1
 
     # Clean up
     cap.release()
 
-    if (left_cheek_reps < 5 or left_cheek_reps < 5):
+    right_cheek_reps = count_true_groups(right_expansions)
+    left_cheek_reps = count_true_groups(left_expansions)
+    # print(right_cheek_reps, left_cheek_reps)
+
+    if (left_cheek_reps < 5 or right_cheek_reps < 5):
         return "Errou"
     
-    if (left_cheek_reps < 8 or left_cheek_reps < 8):
+    if (left_cheek_reps < 8 or right_cheek_reps < 8):
         return "Parcial"
     
     return "Acertou"
@@ -267,3 +293,6 @@ def get_mediapipe_pouting_classification(video_file):
         return "Parcial"
     
     return "Acertou"
+
+if __name__ == "__main__":
+    print(get_mediapipe_cheek_classification("experiments/fono/ex3_fono.mp4"))
