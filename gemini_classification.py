@@ -80,10 +80,36 @@ Retorne APENAS "Correto", "Parcialmente Correto" ou "Incorreto" e um breve comen
 }
 '''
 
+infalte_cheeks_prompt_2 = '''O video anterior é de uma fonoaudióloga realizando o exercócio de inflar as bochechas. Com base nessa execução, avalie a performance de um paciente mostrada a seguir.
+
+Descrição: O paciente deve inflar as bochechas, uma de cada vez. 
+- Situações em que não houve nenhuma inflagem ou movimento são consideradas execuções incorretas. Situações sem movimento tambem devem ser consideradas incorretas.
+- Qualquer movimento adicional que não seja a projeção e lateralização da lingua, como mordidas, caretas etc devem ser considerados incorretor.
+
+Retorne APENAS "Correto", "Parcialmente Correto" ou "Incorreto" e um breve comentário sobre o porquê da sua resposta. A estrutura da resposta deve ser a seguinte:
+{
+    "resposta": "Correto/Parcialmente Correto/Incorreto",
+    "comentario": "Seu comentário aqui"
+}
+'''
+
 vibrate_lips_prompt = '''Veja o video da execução do paciente e avalie se o exercício de vibrar os lábios foi performado corretamente, parcialmente ou incorretamente, de acordo com a descrição do exercício fornecida. 
 
 Descrição: O paciente deve vibrar os lábios. 
 - Situações em que o paciente vibrou os labios de forma pausada são consideradas execuções parciais.
+- Situações em que não houve nenhuma vibração ou movimento são consideradas execuções incorretas. Situações sem movimento tambem devem ser consideradas incorretas.
+- Qualquer movimento adicional que não seja a projeção e lateralização da lingua, como mordidas, caretas etc devem ser considerados incorretor.
+
+Retorne APENAS "Correto", "Parcialmente Correto" ou "Incorreto" e um breve comentário sobre o porquê da sua resposta. A estrutura da resposta deve ser a seguinte:
+{
+    "resposta": "Correto/Parcialmente Correto/Incorreto",
+    "comentario": "Seu comentário aqui"
+}
+'''
+
+vibrate_lips_prompt_2 = '''O video anterior é de uma fonoaudióloga realizando o exercócio de vibrar os lábios. Com base nessa execução, avalie a performance de um paciente mostrada a seguir.
+
+Descrição: O paciente deve vibrar os lábios. 
 - Situações em que não houve nenhuma vibração ou movimento são consideradas execuções incorretas. Situações sem movimento tambem devem ser consideradas incorretas.
 - Qualquer movimento adicional que não seja a projeção e lateralização da lingua, como mordidas, caretas etc devem ser considerados incorretor.
 
@@ -153,6 +179,12 @@ def get_gemini_classification_2(exercise, video_file, max_retries=5, retry_delay
     if exercise == "1":
         prompt = lateralize_tongue_prompt_2
         fono_video_file_name = "experiments/fono/ex1_fono.mp4"
+    if exercise == "infalte_cheeks":
+        prompt = infalte_cheeks_prompt_2
+        fono_video_file_name = "experiments/fono/ex3_fono.mp4"
+    if exercise == "vibrate_lips":
+        prompt = vibrate_lips_prompt_2
+        fono_video_file_name = "experiments/fono/ex4_fono.mp4"
 
     fono_video_bytes = open(fono_video_file_name, 'rb').read()
     video_bytes = open(video_file, 'rb').read()
